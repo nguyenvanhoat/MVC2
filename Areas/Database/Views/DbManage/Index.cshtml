@@ -1,2 +1,59 @@
+@using Microsoft.EntityFrameworkCore
+@using System.Data
 
+@inject AppDbContext dbcontext
 
+@{
+    ViewData["Title"] = "Thông tin database";
+
+    var connect = dbcontext.Database.GetDbConnection();
+
+    string dbname = connect.Database;
+
+    var can_connect = dbcontext.Database.CanConnect();
+}
+<h1>Thông tin về database</h1>
+
+<p>- Database : @connect.Database</p>
+<p>- Soure: @connect.DataSource</p>
+<p>- State: @connect.State</p>
+
+<hr>
+
+@if(can_connect)
+{
+    await dbcontext.Database.OpenConnectionAsync();
+
+    var table = dbcontext.Database.GetDbConnection().GetSchema("Tables");
+
+    foreach(System.Data.DataRow item in table.Rows)
+    {
+        <h3>@item["TABLE_NAME"]</h3>
+    }
+
+    <a class="btn btn-danger" asp-action = "DeleteDb">Xóa Database: @dbname</a>
+}
+else{
+    
+    <p class = "alert alert-danger">Không có khả năng</p>
+
+}
+
+<h1>Trạng thái Migrations</h1>
+
+@foreach (var item in dbcontext.Database.GetAppliedMigrations())
+{
+    <p>@item</p>
+}
+
+@foreach (var item in dbcontext.Database.GetPendingMigrations())
+{
+    <p>@item (pending)</p>
+}
+
+@if(dbcontext.Database.GetPendingMigrations().Any())
+{
+    <form method="post">
+        <button class="btn btn-success m-t-2" asp-action = "Migrate">Tạo Database(Cập nhật)</button>
+    </form>
+}
